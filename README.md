@@ -1,6 +1,8 @@
 # hm305p
-Thanks! inspired by [markrages](https://github.com/markrages/py_test_interface) and [JackDoan](https://github.com/JackDoan/py_test_interface)
-modified to record measurements in a loop
+Thanks [markrages](https://github.com/markrages/py_test_interface) and [JackDoan](https://github.com/JackDoan/py_test_interface)!
+
+Modified by me to record measurements in a loop and write into a csv.
+
 ## dependencies 
 `pip install -r requirements.txt`
 
