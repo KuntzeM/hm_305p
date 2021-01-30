@@ -1,24 +1,11 @@
-#!/usr/bin/python3
-
+import binascii
+import logging
 import struct
-import sys
+from enum import IntEnum
 
 import serial
-from enum import IntEnum
-import logging
-import binascii
-import pandas as pd
-import matplotlib.pyplot as plt
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
-
-
-class CRCError(Exception):
-    pass
-
-
-def rint(x):
-    return int(round(x))
+from hm305 import CRCError, rint
 
 
 class HM305:
@@ -45,17 +32,15 @@ class HM305:
         Device = 0x9999
         SD_Time = 0xCCCC
 
-    def __init__(self, fd=None):
-        if fd is None:
-            logging.debug("HM305 opened without a serial obj! using defaults.")
-            fd = serial.Serial('/dev/ttyUSB0', baudrate=9600, timeout=0.1)
-        self.s = fd
+    def __init__(self, port):
+
+        self.s = serial.Serial(port, baudrate=9600, timeout=0.1)
 
     def send(self, data):
         d = data + struct.pack('<H', self.calculate_crc(data))
-        logging.debug(f"TX[{len(binascii.hexlify(d))/2:02.0f}]: {binascii.hexlify(d)}")
+        logging.debug(f"TX[{len(binascii.hexlify(d)) / 2:02.0f}]: {binascii.hexlify(d)}")
         ret = self.s.write(d)
-        #self.s.flush()
+        # self.s.flush()
         return ret
 
     def recv(self, length=1):
@@ -72,7 +57,7 @@ class HM305:
             if crc != packet_crc:
                 raise CRCError("RX")
 
-            logging.debug(f"RX[{len(binascii.hexlify(data))/2:02.0f}]: {binascii.hexlify(data)}")
+            logging.debug(f"RX[{len(binascii.hexlify(data)) / 2:02.0f}]: {binascii.hexlify(data)}")
             return data[:-2]
         return None
 
@@ -191,66 +176,3 @@ class HM305:
                 else:
                     crc >>= 1
         return crc
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-
-    serial_parser = parser.add_mutually_exclusive_group(required=True)
-    serial_parser.add_argument('--port', type=str, help='serial port')
-
-    volt_parser = parser.add_mutually_exclusive_group()
-    volt_parser.add_argument('--voltage', type=float, help='set voltage')
-    volt_parser.add_argument('--adj-voltage', metavar="X", type=float, help='adjust voltage by X')
-    current_parser = parser.add_mutually_exclusive_group()
-    current_parser.add_argument('--current', type=float, help='set current')
-
-    output_parser = parser.add_mutually_exclusive_group()
-    output_parser.add_argument('--on', action='store_true', help='switch output on')
-    output_parser.add_argument('--off', action='store_true', help='switch output off')
-    beep_parser = parser.add_mutually_exclusive_group()
-    beep_parser.add_argument('--beep', action='store_true', help='enable beeping')
-    beep_parser.add_argument('--nobeep', action='store_true', help='disable beeping')
-
-    parser.add_argument('--debug', action='store_true', help='enable verbose logging')
-    parser.add_argument('--get', action='store_true', help='report output measurements')
-
-    args = parser.parse_args()
-
-    if len(sys.argv) == 1:
-        # display help message when no args are passed.
-        parser.print_help()
-        sys.exit(1)
-
-    if args.debug:
-        logging.getLogger().setLevel(logging.DEBUG)
-    with serial.Serial('/dev/ttyUSB0', baudrate=9600, timeout=0.1) as ser:
-        hm = HM305(ser)
-        if args.voltage is not None:
-            logging.info("Setting voltage:")
-            hm.v = args.voltage
-        elif args.adj_voltage is not None:
-            logging.info("Adjusting voltage:")
-            hm.v += args.adj_voltage
-        if args.current is not None:
-            logging.info("Setting current:")
-            hm.i = args.current
-        if args.beep:
-            logging.info("Setting beep: ON")
-            hm.beep = 1
-        elif args.nobeep:
-            logging.info("Setting beep: OFF")
-            hm.beep = 0
-        if args.off:
-            logging.info("Setting output: OFF")
-            hm.off()
-        elif args.on:
-            logging.info("Setting output: ON")
-            hm.on()
-        if args.get:
-            logging.info(f"{hm.v} Volts")
-            logging.info(f"{hm.i} Amps")
-            logging.info(f"{hm.w} Watts")
-    logging.debug("Done")

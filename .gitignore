@@ -226,3 +226,4 @@ pyvenv.cfg
 pip-selfcheck.json
 venv/*
 .idea/*
+*.csv
