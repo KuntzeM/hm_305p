@@ -8,7 +8,7 @@ from serial import SerialException
 from hm305 import CRCError, CSVWriter
 from hm305.hm305 import HM305
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s\t%(levelname)s\t%(message)s', level=logging.INFO)
 
 if __name__ == "__main__":
     import argparse
@@ -31,13 +31,15 @@ if __name__ == "__main__":
     except SerialException:
         logging.fatal(f"Port {args.port} could not open!")
         sys.exit(1)
-
-    if args.voltage is not None:
-        logging.info(f"Setting voltage: {args.voltage}")
-        hm.v = args.voltage
-    if args.current is not None:
-        logging.info(f"Setting current: {args.current}")
-        hm.i = args.current
+    try:
+        if args.voltage is not None:
+            logging.info(f"Setting voltage: {args.voltage}")
+            hm.v = args.voltage
+        if args.current is not None:
+            logging.info(f"Setting current: {args.current}")
+            hm.i = args.current
+    except SerialException as ex:
+        logging.warning(f"Could not set measurements.")
 
     csv_logger = CSVWriter(args.csv, delimiter=";")
 
@@ -55,5 +57,6 @@ if __name__ == "__main__":
             logging.warning(f"CRCError: {ex}")
         except Exception as ex:
             logging.error(f"unknown issue: {ex}")
+            logging.exception(ex)
 
     logging.debug("Shutdown")

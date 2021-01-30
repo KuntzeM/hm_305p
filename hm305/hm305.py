@@ -98,6 +98,8 @@ class HM305:
     def x(self, addr, val=None):
         self.send_packet(address=addr, value=val)
         ret = self.receive_packet()
+        if ret is None:
+            raise serial.SerialException("could not read measurement")
         if val is None:
             return ret
         else:
