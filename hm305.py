@@ -7,6 +7,8 @@ import serial
 from enum import IntEnum
 import logging
 import binascii
+import pandas as pd
+import matplotlib.pyplot as plt
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
